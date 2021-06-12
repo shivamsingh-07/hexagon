@@ -20,6 +20,7 @@ router.get("/steam/return", passport.authenticate("steam", { failureRedirect: "/
 
 router.get("/logout", (req, res) => {
     req.logOut();
+    req.session = null;
     res.clearCookie("connect.sid");
     res.redirect("/");
 });

@@ -7,7 +7,7 @@ passport.use(
         {
             returnURL: "http://localhost:5000/auth/steam/return",
             realm: "http://localhost:5000",
-            apiKey: "764AA9E9E5A4E1428C9C614A40E28ECF",
+            apiKey: process.env.STEAM_AUTH_KEY
         },
         (identifier, profile, done) => {
             profile.identifier = identifier;

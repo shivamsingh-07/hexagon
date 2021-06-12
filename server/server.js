@@ -17,6 +17,9 @@ app.use(
         secret: "123!@#",
         resave: true,
         saveUninitialized: false,
+        cookie: {
+            maxAge: 60 * 60 * 24 * 1000
+        }
     })
 );
 app.use(cookieParser("123!@#"));
