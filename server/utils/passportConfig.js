@@ -1,4 +1,5 @@
 const passport = require("passport");
+const checkAccount = require("./checkAccount");
 const SteamStrategy = require("passport-steam").Strategy;
 
 passport.use(
@@ -11,7 +12,25 @@ passport.use(
         },
         (identifier, profile, done) => {
             profile.identifier = identifier;
-            return done(null, profile);
+
+            checkAccount(profile.id)
+                .then(code => {
+                    switch (code) {
+                        case 0:
+                            done(null, profile);
+                            break;
+                        case 1:
+                            done(null, false, { message: "Account is banned by steam" });
+                            break;
+                        case 2:
+                            done(null, false, { message: "Your account's game activity is private." });
+                            break;
+                        case 3:
+                            done(null, false, { message: "Your CS:GO playtime is less than 100 hours." });
+                            break;
+                    }
+                })
+                .catch(err => console.log(err));
         }
     )
 );
