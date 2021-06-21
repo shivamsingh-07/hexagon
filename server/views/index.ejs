@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Hexagon</title>
+    </head>
+    <body>
+        <span id="msg"></span>
+        <button id="play" onclick="search()">Play</button>
+        <button id="cancel" onclick="cancel()" hidden>Cancel</button>
+
+        <button id="accept" onclick="accept()" hidden>Accept</button>
+
+        <!-- JS -->
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var space = io("/matchmaking");
+            var id = Math.floor(Math.random() * 10000);
+
+            function search() {
+                space.emit("searching", id);
+                document.getElementById("msg").innerText = "searching";
+                document.getElementById("play").hidden = true;
+                document.getElementById("cancel").hidden = false;
+            }
+
+            function cancel() {
+                space.emit("cancel", id);
+                document.getElementById("msg").innerText = "cancel";
+                document.getElementById("play").hidden = false;
+            }
+
+            function accept() {
+                space.emit("accepted", id);
+                document.getElementById("msg").innerText = "accepted";
+                document.getElementById("accept").hidden = true;
+            }
+
+            space.on("matchFound", room => {
+                document.getElementById("msg").innerText = "Join: " + room;
+            });
+
+            space.on("matchNotAccepted", () => {
+                document.getElementById("msg").innerText = "Match was found but some player(s) failed to accept...";
+                document.getElementById("accept").hidden = true;
+                document.getElementById("play").hidden = false;
+            });
+        </script>
+    </body>
+</html>

@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 const RoomSchema = new mongoose.Schema({
     roomID: String,
-    status: { type: Number, default: 0 },
     captain_1: String,
     captain_2: String,
     map: {
@@ -12,7 +11,7 @@ const RoomSchema = new mongoose.Schema({
     vetoTurn: String,
     team_1: [String],
     team_2: [String],
-    startTime: { type: String, default: new Date().toString() }
+    createdAt: { type: String, default: new Date().toUTCString() }
 });
 
 module.exports = mongoose.model("rooms", RoomSchema);

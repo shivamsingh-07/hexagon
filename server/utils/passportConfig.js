@@ -6,8 +6,8 @@ passport.use(
     "steam",
     new SteamStrategy(
         {
-            returnURL: "http://localhost:5000/auth/steam/return",
-            realm: "http://localhost:5000",
+            realm: `${process.env.API_URL}/auth/steam`,
+            returnURL: `${process.env.API_URL}/auth/steam/return`,
             apiKey: process.env.STEAM_AUTH_KEY
         },
         (identifier, profile, done) => {
@@ -20,7 +20,7 @@ passport.use(
                             done(null, profile);
                             break;
                         case 1:
-                            done(null, false, { message: "Account is banned by steam" });
+                            done(null, false, { message: "Your account is banned by steam." });
                             break;
                         case 2:
                             done(null, false, { message: "Your account's game activity is private." });
@@ -30,7 +30,7 @@ passport.use(
                             break;
                     }
                 })
-                .catch(err => console.log(err));
+                .catch(err => done(null, false, { error: err }));
         }
     )
 );
