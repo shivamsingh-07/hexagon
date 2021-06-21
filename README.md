@@ -7,6 +7,8 @@ This is an esports website that is used to conduct matchmaking and tournaments.
 Create a `.env` file in the `server` folder and copy this snippet.
 
 ```
+API_URL=http://localhost:5000
+
 SESSION_SECRET=
 STEAM_AUTH_KEY=
 
