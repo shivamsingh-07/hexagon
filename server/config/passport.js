@@ -1,5 +1,5 @@
 const passport = require("passport");
-const checkAccount = require("./checkAccount");
+const checkAccount = require("../utils/checkAccount");
 const SteamStrategy = require("passport-steam").Strategy;
 
 passport.use(
@@ -8,7 +8,7 @@ passport.use(
         {
             realm: `${process.env.API_URL}/auth/steam`,
             returnURL: `${process.env.API_URL}/auth/steam/return`,
-            apiKey: process.env.STEAM_AUTH_KEY
+            apiKey: process.env.STEAM_API_KEY
         },
         (identifier, profile, done) => {
             profile.identifier = identifier;

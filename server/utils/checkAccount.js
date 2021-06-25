@@ -1,6 +1,5 @@
-require("dotenv").config();
 const SteamAPI = require("steamapi");
-const steam = new SteamAPI(process.env.STEAM_AUTH_KEY);
+const steam = new SteamAPI(process.env.STEAM_API_KEY);
 
 module.exports = id =>
     new Promise((resolve, reject) =>
@@ -14,7 +13,7 @@ module.exports = id =>
                                 .getUserOwnedGames(id)
                                 .then(games => {
                                     const csgo = games.filter(game => game.appID == 730)[0];
-                                    if (Math.round(csgo.playTime / 60) >= 0) resolve(0);
+                                    if (Math.round(csgo.playTime / 60) >= 100) resolve(0);
                                     else resolve(3);
                                 })
                                 .catch(err => reject(err.message));

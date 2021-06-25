@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const RoomSchema = new mongoose.Schema({
     roomID: String,
+    serverIP: String,
     captain_1: String,
     captain_2: String,
     map: {

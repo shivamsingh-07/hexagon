@@ -1,7 +1,8 @@
 const { nanoid } = require("nanoid");
 const Room = require("../models/Room");
+const Server = require("../models/Server");
 
-module.exports = array =>
+module.exports = (array, server) =>
     new Promise((resolve, reject) => {
         // Create teams and select captain then return room id
         const half = Math.ceil(array.length / 2);
@@ -17,6 +18,7 @@ module.exports = array =>
         // Create room
         const room = new Room({
             roomID: nanoid(),
+            serverIP: server,
             captain_1,
             captain_2,
             vetoTurn: [captain_1, captain_2][Math.floor(Math.random() * 2)],
@@ -24,5 +26,10 @@ module.exports = array =>
             team_2
         });
 
-        room.save().then(data => resolve(data.roomID));
+        Server.findOne({ credential: server }, (err, data) => {
+            if (err) reject(err);
+
+            data.availability = false;
+            data.save().then(() => room.save().then(data => resolve(data.roomID)));
+        });
     });

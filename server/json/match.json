@@ -1,0 +1,25 @@
+{
+    "matchid": "",
+    "num_maps": 1,
+    "players_per_team": 5,
+    "min_players_to_ready": 5,
+    "min_spectators_to_ready": 0,
+    "skip_veto": true,
+    "side_type": "always_knife",
+    "spectators": {
+        "players": []
+    },
+    "maplist": [],
+    "team1": {
+        "name": "Team A",
+        "players": []
+    },
+    "team2": {
+        "name": "Team B",
+        "players": []
+    },
+    "cvars": {
+        "get5_web_api_url": "",
+        "get5_check_auths": "1"
+    }
+}

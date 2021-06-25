@@ -17,7 +17,7 @@ router.get("/steam", passport.authenticate("steam"));
 
 router.get("/steam/return", (req, res, next) =>
     passport.authenticate("steam", (err, user, info) => {
-        if (err) return next(err);
+        if (err) throw err;
         if (info) return res.send(info);
 
         Player.findOne({ steamID64: user.id }, async (err, data) => {
