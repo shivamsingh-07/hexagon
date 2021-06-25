@@ -12,10 +12,7 @@ API_URL=http://localhost:5000
 SESSION_SECRET=
 STEAM_AUTH_KEY=
 
-CLIENT_ID=
-CLIENT_SECRET=
-REDIRECT_URI=https://developers.google.com/oauthplayground
-REFRESH_TOKEN=
+SERVER_RCON_PASSWORD=
 
 MONGO_URI=
 ```

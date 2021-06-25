@@ -10,8 +10,8 @@ const RateLimit = require("express-rate-limit");
 const SessionStore = require("connect-mongo");
 const RateStore = require("rate-limit-mongo");
 
-require("./utils/database");
-require("./utils/passportConfig");
+require("./config/database");
+require("./config/passport");
 require("ejs");
 
 const app = express();
@@ -59,11 +59,12 @@ app.get("/", (req, res) => {
 });
 app.use("/auth", require("./routes/auth"));
 app.use("/room", require("./routes/room"));
+app.use("/match", require("./routes/match"));
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => console.log(`Live on ${PORT}...`));
 
 // Web Socket
-require("./utils/socket")(server);
+require("./config/socket")(server);
 
 module.exports = server;

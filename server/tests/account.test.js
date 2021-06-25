@@ -1,6 +1,10 @@
 const check = require("../utils/checkAccount");
 
 describe("Account Check", () => {
+    before(() => {
+        require("dotenv").config();
+    });
+
     it("should be banned", done => {
         check("76561198398983515").then(res => res === 1 && done());
     });

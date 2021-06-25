@@ -1,8 +1,11 @@
 const socketio = require("socket.io");
 const createRoom = require("../utils/createRoom");
 const Room = require("../models/Room");
+const setupMatch = require("../utils/setupMatch");
+const serverStatus = require("../utils/serverStatus");
 
-let players = [];
+const maxPlayers = 2;
+let queue = [];
 
 module.exports = server => {
     const io = socketio(server, {
@@ -17,11 +20,17 @@ module.exports = server => {
             socket.join("lobby");
             players.push(id);
 
-            // TODO: Add server verification support
-            if (players.length === 2) {
-                createRoom(players).then(room => io.of("/matchmaking").in("lobby").emit("matchFound", room));
-                players = [];
-            }
+            if (players.length === maxPlayers)
+                serverStatus().then(server => {
+                    if (server != null) {
+                        let players = queue,
+                            array = [];
+                        players.reverse();
+                        for (let i = 0; i < maxPlayers; i++) array.push(players.pop());
+                        queue = players.reverse();
+                        createRoom(array, server).then(room => io.of("/matchmaking").in("lobby").emit("matchFound", room));
+                    }
+                });
         });
 
         socket.on("cancel", id => {
@@ -32,8 +41,6 @@ module.exports = server => {
 
     // Handle chat and match status
     io.of("/room").on("connection", socket => {
-        console.log("New Connection", socket.id);
-
         // Map Veto
         socket.on("joinRoom", data => {
             socket.join([data.room, data.team]);
@@ -59,7 +66,12 @@ module.exports = server => {
                     body.save().then(() => io.of("/room").in(data.room).emit("turn", body.vetoTurn));
                 } else {
                     io.of("/room").in(data.room).emit("loading");
-                    setTimeout(() => io.of("/room").in(data.room).emit("mapSelected", body.map[0]), 5000);
+                    setupMatch(body.roomID).then(ip =>
+                        io
+                            .of("/room")
+                            .in(data.room)
+                            .emit("mapSelected", { connect: `connect ${ip}`, map: body.map[0] })
+                    );
                 }
             });
         });
@@ -71,7 +83,14 @@ module.exports = server => {
                     if (err) throw err;
 
                     while (body.map.length > 1) body.map.splice(Math.floor(Math.random() * body.map.length), 1);
-                    body.save().then(res => setTimeout(() => io.of("/room").in(room).emit("mapSelected", res.map[0]), 5000));
+                    body.save().then(res =>
+                        setupMatch(body.roomID).then(ip =>
+                            io
+                                .of("/room")
+                                .in(res.room)
+                                .emit("mapSelected", { connect: `connect ${ip}`, map: res.map[0] })
+                        )
+                    );
                 });
             } catch (error) {
                 console.log(error);
