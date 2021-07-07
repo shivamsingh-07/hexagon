@@ -30,6 +30,7 @@ module.exports = (array, server) =>
             if (err) reject(err);
 
             data.availability = false;
+            console.log("hi");
             data.save().then(() => room.save().then(data => resolve(data.roomID)));
         });
     });

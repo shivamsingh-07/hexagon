@@ -13,7 +13,7 @@ module.exports = id =>
                                 .getUserOwnedGames(id)
                                 .then(games => {
                                     const csgo = games.filter(game => game.appID == 730)[0];
-                                    if (Math.round(csgo.playTime / 60) >= 100) resolve(0);
+                                    if (Math.round(csgo.playTime / 60) >= 0) resolve(0);
                                     else resolve(3);
                                 })
                                 .catch(err => reject(err.message));

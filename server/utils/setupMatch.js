@@ -10,8 +10,7 @@ module.exports = roomID =>
 
             const match = new Match({
                 matchID: data.roomID,
-                apiKey: "",
-                map: data.map
+                map: data.map[0]
             });
 
             const rcon = server(data.serverIP);
@@ -23,12 +22,12 @@ module.exports = roomID =>
                     .then(async () => {
                         await rcon.command("sm_whitelist_resettodefault");
 
-                        data.team_1.forEach(player => {
-                            await rcon.command(`sm_whitelist_add "${player}"`);
+                        data.team_1.forEach(async player => {
+                            await rcon.command(`sm_whitelist_add "${player.steamID}"`);
                         });
 
-                        data.team_2.forEach(player => {
-                            await rcon.command(`sm_whitelist_add "${player}"`);
+                        data.team_2.forEach(async player => {
+                            await rcon.command(`sm_whitelist_add "${player.steamID}"`);
                         });
                     })
                     .then(() => rcon.disconnect())

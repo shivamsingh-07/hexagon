@@ -26,13 +26,10 @@ const limiter = new RateLimit({
     message: "Too many requests created from this IP, please try again after an hour..."
 });
 
-app.set("view engine", "ejs");
-app.use(express.static(__dirname + "/views"));
-
 // Middlewares
 app.use("/auth/steam", limiter);
 app.use(helmet());
-app.use(cors({ origin: "*", credentials: true }));
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(
@@ -55,7 +52,7 @@ app.use(passport.session());
 
 // Routes
 app.get("/", (req, res) => {
-    res.render("index");
+    res.send("Hexagon API");
 });
 app.use("/auth", require("./routes/auth"));
 app.use("/room", require("./routes/room"));

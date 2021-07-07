@@ -11,12 +11,12 @@
     },
     "maplist": [],
     "team1": {
-        "name": "Team A",
-        "players": []
+        "name": "",
+        "players": {}
     },
     "team2": {
-        "name": "Team B",
-        "players": []
+        "name": "",
+        "players": {}
     },
     "cvars": {
         "get5_web_api_url": "",

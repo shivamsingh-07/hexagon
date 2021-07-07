@@ -1,6 +1,32 @@
 const passport = require("passport");
+const bcrypt = require("bcryptjs");
 const checkAccount = require("../utils/checkAccount");
 const SteamStrategy = require("passport-steam").Strategy;
+const LocalStratergy = require("passport-local").Strategy;
+const Player = require("../models/Player");
+
+passport.use(
+    "local",
+    new LocalStratergy(
+        {
+            usernameField: "email",
+            passwordField: "password"
+        },
+        (email, pass, done) => {
+            Player.findOne({ email }, { _id: 0, __v: 0, createdAt: 0 }, (err, player) => {
+                if (err) return done(err);
+                if (!player) return done(null, false, { message: "User not found" });
+                if (!player.verified) return done(null, false, { message: "User not verified" });
+
+                bcrypt.compare(pass, player.password, (err, result) => {
+                    if (err) done(err);
+                    if (result) return done(null, player);
+                    return done(null, false, { message: "Email or password is incorrect!" });
+                });
+            });
+        }
+    )
+);
 
 passport.use(
     "steam",
@@ -30,7 +56,7 @@ passport.use(
                             break;
                     }
                 })
-                .catch(err => done(null, false, { error: err }));
+                .catch(err => done(err));
         }
     )
 );

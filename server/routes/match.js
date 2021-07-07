@@ -12,7 +12,7 @@ router.get("/:match_id", (req, res) => {
         if (err) throw err;
         if (!data) return res.status(400).json({ message: "Invalid match ID" });
 
-        res.status(200).send(data);
+        res.send(data);
     });
 });
 
@@ -23,10 +23,18 @@ router.get("/:match_id/config", (req, res) => {
         if (err) throw err;
         if (!data) res.status(400).json({ message: "Invalid match ID" });
 
+        const team_1 = {};
+        const team_2 = {};
+
+        data.team_1.forEach(player => (team_1[player.steamID] = player.name));
+        data.team_2.forEach(player => (team_2[player.steamID] = player.name));
+
         match.matchid = data.roomID;
         match.maplist = data.map;
-        match.team1.players = data.team_1;
-        match.team2.players = data.team_2;
+        match.team1.name = "Team_" + data.captain_1.name;
+        match.team1.players = team_1;
+        match.team2.name = "Team_" + data.captain_2.name;
+        match.team2.players = team_2;
         match.cvars.get5_web_api_url = `${process.env.SERVER_CONFIG_URL}`;
 
         res.status(200).send(match);

@@ -16,11 +16,11 @@ module.exports = server => {
 
     // Handle player matchmaking
     io.of("/matchmaking").on("connection", socket => {
-        socket.on("searching", id => {
+        socket.on("searching", user => {
             socket.join("lobby");
-            players.push(id);
+            queue.push(user);
 
-            if (players.length === maxPlayers)
+            if (queue.length === maxPlayers)
                 serverStatus().then(server => {
                     if (server != null) {
                         let players = queue,
@@ -28,14 +28,15 @@ module.exports = server => {
                         players.reverse();
                         for (let i = 0; i < maxPlayers; i++) array.push(players.pop());
                         queue = players.reverse();
+                        console.log(array);
                         createRoom(array, server).then(room => io.of("/matchmaking").in("lobby").emit("matchFound", room));
                     }
                 });
         });
 
-        socket.on("cancel", id => {
+        socket.on("cancel", user => {
             socket.leave("lobby");
-            players = players.filter((value, index) => value != id);
+            queue = queue.filter((value, index) => value != user);
         });
     });
 
@@ -45,22 +46,22 @@ module.exports = server => {
         socket.on("joinRoom", data => {
             socket.join([data.room, data.team]);
 
-            Room.findOne({ roomID: data.room }, { __v: 0 }, (err, body) => {
+            Room.findOne({ roomID: data.room }, { __v: 0, _id: 0 }, (err, body) => {
                 if (err) throw err;
 
-                io.of("/room").in(data.room).emit("startVeto");
+                io.of("/room").in(data.room).emit("startVeto", 59);
                 io.of("/room").in(data.room).emit("turn", body.vetoTurn);
             });
         });
 
         socket.on("banMap", data => {
-            io.of("/room").in(data.room).emit("incTime");
+            // io.of("/room").in(data.room).emit("incTime");
             Room.findOneAndUpdate({ roomID: data.room }, { $pull: { map: data.map } }, { new: true, useFindAndModify: false }, (err, body) => {
                 if (err) throw err;
 
                 if (body.map.length > 1) {
                     io.of("/room").in(data.room).emit("mapBanned", data.map);
-                    if (body.vetoTurn == body.captain_1) body.vetoTurn = body.captain_2;
+                    if (body.vetoTurn.name == body.captain_1.name) body.vetoTurn = body.captain_2;
                     else body.vetoTurn = body.captain_1;
 
                     body.save().then(() => io.of("/room").in(data.room).emit("turn", body.vetoTurn));
@@ -70,7 +71,7 @@ module.exports = server => {
                         io
                             .of("/room")
                             .in(data.room)
-                            .emit("mapSelected", { connect: `connect ${ip}`, map: body.map[0] })
+                            .emit("mapSelected", { connect: `${ip}`, map: body.map[0] })
                     );
                 }
             });
@@ -84,12 +85,13 @@ module.exports = server => {
 
                     while (body.map.length > 1) body.map.splice(Math.floor(Math.random() * body.map.length), 1);
                     body.save().then(res =>
-                        setupMatch(body.roomID).then(ip =>
-                            io
-                                .of("/room")
-                                .in(res.room)
-                                .emit("mapSelected", { connect: `connect ${ip}`, map: res.map[0] })
-                        )
+                        // setupMatch(res.roomID).then(ip =>
+                        //     io
+                        //         .of("/room")
+                        //         .in(res.room)
+                        //         .emit("mapSelected", { connect: `connect ${ip}`, map: res.map[0] })
+                        // )
+                        io.of("/room").in(room).emit("mapSelected", { connect: `connect xyz`, map: "de_mirage" })
                     );
                 });
             } catch (error) {
