@@ -28,7 +28,6 @@ module.exports = server => {
                         players.reverse();
                         for (let i = 0; i < maxPlayers; i++) array.push(players.pop());
                         queue = players.reverse();
-                        console.log(array);
                         createRoom(array, server).then(room => io.of("/matchmaking").in("lobby").emit("matchFound", room));
                     }
                 });

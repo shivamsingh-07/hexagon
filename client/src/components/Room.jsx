@@ -19,16 +19,16 @@ function Room({ auth }) {
                     await axios.get("http://localhost:5000/room/" + roomID, { withCredentials: true }).then(response => {
                         setMatch(response.data);
                         setLoading(false);
-                        
-                        if(response.data.map.length <= 1) return history.push("/dashboard");
+
+                        if (response.data.map.length <= 1) return history.push("/dashboard");
 
                         let team;
-                        if(response.data.team_1.some((user, index, array) => {
+                        if (response.data.team_1.some((user, index, array) => {
                             return user.steamID == auth.steamID64;
                         })) team = "Team_" + response.data.captain_1.name;
                         else team = "Team_" + response.data.captain_2.name;
-                        
-                        space.emit("joinRoom", {room: roomID, team});
+
+                        space.emit("joinRoom", { room: roomID, team });
                     });
                 } catch (err) {
                     setMessage(err.response.data.error);
@@ -62,7 +62,7 @@ function Room({ auth }) {
         if (selected.map === "de_cbble") selected.map = "de_cobblestone";
         document.getElementById("name").innerText = selected.map.slice(3).charAt(0).toUpperCase() + selected.map.slice(4);
         document.getElementById("url").value = "connect " + selected.connect;
-        document.getElementById("connect").setAttribute("href","steam://connect/" + selected.connect);
+        document.getElementById("connect").setAttribute("href", "steam://connect/" + selected.connect);
         document.getElementById("clock").hidden = true;
         document.getElementById("turn").hidden = true;
         document.getElementById("loader").remove();
@@ -115,12 +115,12 @@ function Room({ auth }) {
                         <br />
                         {match.team_1.map((player, index) => (
                             <div key={index}>
-                            <img src={player.thumbnail} alt="" width="30px" />
-                            &nbsp;&nbsp;
-                            <a href={player.profile} target="_blank" id="player_2" >
-                                {player.name}
-                            </a>
-                        </div>
+                                <img src={player.thumbnail} alt="" width="30px" />
+                                &nbsp;&nbsp;
+                                <a href={player.profile} target="_blank" id="player_2" >
+                                    {player.name}
+                                </a>
+                            </div>
                         ))}
                     </section>
                     <section>

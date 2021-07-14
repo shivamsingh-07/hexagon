@@ -1,3 +1,4 @@
+const SteamID = require("steamid");
 const server = require("../config/rcon");
 const Room = require("../models/Room");
 const Match = require("../models/Match");
@@ -23,11 +24,11 @@ module.exports = roomID =>
                         await rcon.command("sm_whitelist_resettodefault");
 
                         data.team_1.forEach(async player => {
-                            await rcon.command(`sm_whitelist_add "${player.steamID}"`);
+                            await rcon.command(`sm_whitelist_add "${new SteamID(player.steamID).getSteam3RenderedID()}"`);
                         });
 
                         data.team_2.forEach(async player => {
-                            await rcon.command(`sm_whitelist_add "${player.steamID}"`);
+                            await rcon.command(`sm_whitelist_add "${new SteamID(player.steamID).getSteam3RenderedID()}"`);
                         });
                     })
                     .then(() => rcon.disconnect())

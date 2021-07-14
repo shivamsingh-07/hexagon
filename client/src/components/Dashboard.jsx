@@ -12,7 +12,7 @@ function Dashboard({ auth }) {
     const [message, setMessage] = useState("");
 
     const search = () => {
-        space.emit("searching", {name, steamID, thumbnail, profile});
+        space.emit("searching", { name, steamID, thumbnail, profile });
         setMessage("searching");
         // document.getElementById("play").hidden = true;
         // document.getElementById("cancel").hidden = false;

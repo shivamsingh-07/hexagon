@@ -49,6 +49,10 @@ app.use(
 app.use(cookieParser("123!@#"));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use((req, res, next) => {
+    console.log(`${req.method}    ${req.url}  ${res.statusCode}`);
+    next();
+});
 
 // Routes
 app.get("/", (req, res) => {
