@@ -24,11 +24,11 @@ module.exports = roomID =>
                         await rcon.command("sm_whitelist_resettodefault");
 
                         data.team_1.forEach(async player => {
-                            await rcon.command(`sm_whitelist_add "${new SteamID(player.steamID).getSteam3RenderedID()}"`);
+                            await rcon.command(`sm_whitelist_add "STEAM_1:1:${new SteamID(player.steamID).getSteam2RenderedID().split(":")[2]}"`);
                         });
 
                         data.team_2.forEach(async player => {
-                            await rcon.command(`sm_whitelist_add "${new SteamID(player.steamID).getSteam3RenderedID()}"`);
+                            await rcon.command(`sm_whitelist_add "STEAM_1:1:${new SteamID(player.steamID).getSteam2RenderedID().split(":")[2]}"`);
                         });
                     })
                     .then(() => rcon.disconnect())
