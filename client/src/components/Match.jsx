@@ -14,7 +14,7 @@ function Match() {
         () =>
             (async () => {
                 try {
-                    await axios.get("http://localhost:5000/match/" + matchID, { withCredentials: true }).then(response => {
+                    await axios.get(`${process.env.REACT_APP_API_URL}/match/` + matchID, { withCredentials: true }).then(response => {
                         setMatch(response.data);
                         setLoading(false);
 
@@ -38,9 +38,7 @@ function Match() {
         return (
             <div>
                 <h1>Match #{matchID}</h1>
-                <p>
-                    {JSON.stringify(match)}
-                </p>
+                <p>{JSON.stringify(match)}</p>
             </div>
         );
     else return <div className="spinner-border" id="loader" role="status"></div>;

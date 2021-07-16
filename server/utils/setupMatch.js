@@ -11,18 +11,18 @@ module.exports = roomID =>
 
             const match = new Match({
                 matchID: data.roomID,
-                map: data.map[0]
+                apiKey: Math.random().toString(20).slice(2).toUpperCase()
             });
 
             const rcon = server(data.serverIP);
 
-            match.save().then(() =>
+            match.save().then(details =>
                 rcon
                     .connect()
                     .then(() => rcon.command(`get5_loadmatch_url "${process.env.SERVER_CONFIG_URL}/match/${data.roomID}/config"`))
-                    .then(async () => {
-                        await rcon.command("sm_whitelist_resettodefault");
-
+                    .then(() => rcon.command(`sm_cvar get5_web_api_key "${details.apiKey}"`))
+                    .then(() => rcon.command("sm_whitelist_resettodefault"))
+                    .then(() => {
                         data.team_1.forEach(async player => {
                             await rcon.command(`sm_whitelist_add "STEAM_1:1:${new SteamID(player.steamID).getSteam2RenderedID().split(":")[2]}"`);
                         });

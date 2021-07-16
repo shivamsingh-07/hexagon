@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useHistory } from "react-router-dom";
 import io from "socket.io-client";
+import axios from "axios";
 
 function Dashboard({ auth }) {
-    const space = io.connect("http://localhost:5000/matchmaking");
+    const space = io.connect(`${process.env.REACT_APP_API_URL}/matchmaking`);
     const [name, setName] = useState(auth.username);
     const [email, setEmail] = useState(auth.email);
     const [verified, setVerified] = useState(auth.verified);
@@ -10,8 +12,21 @@ function Dashboard({ auth }) {
     const [thumbnail, setThumbnail] = useState(auth.thumbnail);
     const [profile, setProfile] = useState(auth.profileUrl);
     const [message, setMessage] = useState("");
+    const history = useHistory();
+
+    const logout = async e => {
+        try {
+            await axios.post(`${process.env.REACT_APP_API_URL}/auth/logout`, {}, { withCredentials: true }).then(response => {
+                setMessage(response.data.message);
+                history.push("/");
+            });
+        } catch (err) {
+            setMessage(err.response.data.error);
+        }
+    };
 
     const search = () => {
+        if (!steamID) return setMessage("No steam account found!");
         space.emit("searching", { name, steamID, thumbnail, profile });
         setMessage("searching");
         // document.getElementById("play").hidden = true;
@@ -20,7 +35,7 @@ function Dashboard({ auth }) {
 
     const cancel = () => {
         space.emit("cancel", steamID);
-        setMessage("cancel");
+        setMessage("");
         // document.getElementById("play").hidden = false;
     };
 
@@ -63,9 +78,13 @@ function Dashboard({ auth }) {
             <br />
             <button onClick={() => search()}>Play</button>
             <br />
-            <span>{message}</span>
+            <button onClick={() => cancel()}>Cancel</button>
             <br />
-            <a href="http://localhost:5000/auth/steam" target="_blank" hidden={steamID !== null}>
+            <span>{message}</span>
+            <button onClick={() => logout()}>Logout</button>
+            <br />
+            <br />
+            <a href={`${process.env.REACT_APP_API_URL}/auth/steam`} target="_blank" hidden={steamID !== null}>
                 Connect Steam
             </a>
         </div>

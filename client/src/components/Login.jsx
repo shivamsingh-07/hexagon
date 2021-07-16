@@ -13,7 +13,7 @@ function Login() {
         try {
             await axios
                 .post(
-                    "http://localhost:5000/auth/login",
+                    `${process.env.REACT_APP_API_URL}/auth/login`,
                     {
                         email,
                         password
@@ -34,9 +34,9 @@ function Login() {
             <h1>Login</h1>
             <br />
             <form method="POST" onSubmit={e => login(e)}>
-                <input type="email" name="email" onChange={e => setEmail(e.target.value)} />
+                <input type="email" name="email" onChange={e => setEmail(e.target.value)} required />
                 <br />
-                <input type="password" name="password" onChange={e => setPassword(e.target.value)} />
+                <input type="password" name="password" onChange={e => setPassword(e.target.value)} required />
                 <br />
                 <br />
                 <button type="submit">Log In</button>

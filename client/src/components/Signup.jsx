@@ -12,7 +12,7 @@ function Signup() {
         try {
             await axios
                 .post(
-                    "http://localhost:5000/auth/signup",
+                    `${process.env.REACT_APP_API_URL}/auth/signup`,
                     {
                         username,
                         email,
@@ -33,11 +33,11 @@ function Signup() {
             <h1>Signup</h1>
             <br />
             <form method="POST" onSubmit={e => signup(e)}>
-                <input type="text" name="username" onChange={e => setUsername(e.target.value)} />
+                <input type="text" name="username" onChange={e => setUsername(e.target.value)} required />
                 <br />
-                <input type="email" name="email" onChange={e => setEmail(e.target.value)} />
+                <input type="email" name="email" onChange={e => setEmail(e.target.value)} required />
                 <br />
-                <input type="password" name="password" onChange={e => setPassword(e.target.value)} />
+                <input type="password" name="password" onChange={e => setPassword(e.target.value)} required />
                 <br />
                 <br />
                 <button type="submit">Sign Up</button>

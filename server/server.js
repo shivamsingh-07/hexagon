@@ -12,7 +12,6 @@ const RateStore = require("rate-limit-mongo");
 
 require("./config/database");
 require("./config/passport");
-require("ejs");
 
 const app = express();
 const limiter = new RateLimit({
@@ -21,17 +20,18 @@ const limiter = new RateLimit({
         collectionName: "rate_limits",
         expireTimeMs: 60 * 60 * 1000
     }),
-    max: 10,
+    max: 60,
     windowMs: 60 * 60 * 1000,
     message: "Too many requests created from this IP, please try again after an hour..."
 });
 
 // Middlewares
-app.use("/auth/steam", limiter);
+app.use("/auth", limiter);
 app.use(helmet());
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(cors({ origin: process.env.WEB_URL, credentials: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(express.raw({ type: "application/octet-stream", limit: "100mb" }));
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
@@ -50,7 +50,7 @@ app.use(cookieParser("123!@#"));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use((req, res, next) => {
-    console.log(`${req.method}    ${req.url}  ${res.statusCode}`);
+    console.log(req.method, req.url);
     next();
 });
 

@@ -52,7 +52,7 @@ passport.use(
                             done(null, false, { message: "Your account's game activity is private." });
                             break;
                         case 3:
-                            done(null, false, { message: "Your CS:GO playtime is less than 100 hours." });
+                            done(null, false, { message: "Your CS:GO playtime is less than 50 hours." });
                             break;
                     }
                 })

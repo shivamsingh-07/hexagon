@@ -10,7 +10,7 @@ function PrivateRoute({ component: Component, ...rest }) {
     useEffect(() => {
         (async () => {
             try {
-                await axios.post("http://localhost:5000/auth", {}, { withCredentials: true }).then(response => {
+                await axios.post(`${process.env.REACT_APP_API_URL}/auth`, {}, { withCredentials: true }).then(response => {
                     if (response.status === 200 && response.data) {
                         setAuth(true);
                         setUser(response.data);

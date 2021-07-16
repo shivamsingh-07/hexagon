@@ -4,7 +4,7 @@ import axios from "axios";
 import io from "socket.io-client";
 
 function Room({ auth }) {
-    const space = io.connect("http://localhost:5000/room");
+    const space = io.connect(`${process.env.REACT_APP_API_URL}/room`);
     const [match, setMatch] = useState({});
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
@@ -16,16 +16,19 @@ function Room({ auth }) {
         () =>
             (async () => {
                 try {
-                    await axios.get("http://localhost:5000/room/" + roomID, { withCredentials: true }).then(response => {
+                    await axios.get(`${process.env.REACT_APP_API_URL}/room/` + roomID, { withCredentials: true }).then(response => {
                         setMatch(response.data);
                         setLoading(false);
 
                         if (response.data.map.length <= 1) return history.push("/dashboard");
 
                         let team;
-                        if (response.data.team_1.some((user, index, array) => {
-                            return user.steamID == auth.steamID64;
-                        })) team = "Team_" + response.data.captain_1.name;
+                        if (
+                            response.data.team_1.some((user, index, array) => {
+                                return user.steamID == auth.steamID64;
+                            })
+                        )
+                            team = "Team_" + response.data.captain_1.name;
                         else team = "Team_" + response.data.captain_2.name;
 
                         space.emit("joinRoom", { room: roomID, team });
@@ -38,7 +41,7 @@ function Room({ auth }) {
         []
     );
 
-    space.on("turn", (user) => {
+    space.on("turn", user => {
         let map = document.querySelectorAll(".btn-close");
         if (user.name === auth.username) {
             document.getElementById("turn").innerText = "Your Turn";
@@ -48,7 +51,7 @@ function Room({ auth }) {
         } else document.getElementById("turn").innerText = "Your Opponent's Turn";
     });
 
-    space.on("mapBanned", (ban) => {
+    space.on("mapBanned", ban => {
         document.getElementById(ban).remove();
     });
 
@@ -56,7 +59,7 @@ function Room({ auth }) {
         time += 5;
     });
 
-    space.on("mapSelected", (selected) => {
+    space.on("mapSelected", selected => {
         clearInterval(ID);
         document.getElementById("logo").setAttribute("src", `/assets/images/${selected.map}.jpg`);
         if (selected.map === "de_cbble") selected.map = "de_cobblestone";
@@ -76,7 +79,7 @@ function Room({ auth }) {
         document.getElementById("veto").hidden = true;
     });
 
-    space.on("startVeto", (counter) => {
+    space.on("startVeto", counter => {
         time = counter;
         document.getElementById("veto").hidden = false;
         // ID = setInterval(() => {
@@ -117,7 +120,7 @@ function Room({ auth }) {
                             <div key={index}>
                                 <img src={player.thumbnail} alt="" width="30px" />
                                 &nbsp;&nbsp;
-                                <a href={player.profile} target="_blank" id="player_2" >
+                                <a href={player.profile} target="_blank" id="player_2">
                                     {player.name}
                                 </a>
                             </div>
@@ -181,7 +184,7 @@ function Room({ auth }) {
                             <div key={index}>
                                 <img src={player.thumbnail} alt="" width="30px" />
                                 &nbsp;&nbsp;
-                                <a href={player.profile} target="_blank" id="player_2" >
+                                <a href={player.profile} target="_blank" id="player_2">
                                     {player.name}
                                 </a>
                             </div>

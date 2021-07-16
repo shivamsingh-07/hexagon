@@ -98,13 +98,18 @@ router.get("/steam/return", (req, res, next) =>
         Player.findOne({ username: req.user.username }, (err, player) => {
             if (err) throw err;
             if (!player) return res.status(400).json({ message: "Invalid user!" });
-            if (player.steamID64) return res.status(400).json({ message: "Steam account already added!" });
+            if (player.steamID64) return res.status(403).json({ message: "Steam account already added!" });
 
             player.steamID64 = profile.id;
             player.thumbnail = profile.photos[2].value;
             player.profileUrl = profile._json.profileurl;
 
-            player.save().then(() => res.json({ message: "Steam account added" }));
+            player.save().then(() => {
+                req.logOut();
+                req.session = null;
+                res.clearCookie("connect.sid");
+                res.redirect(`${process.env.WEB_URL}/auth/login`);
+            });
         });
     })(req, res, next)
 );

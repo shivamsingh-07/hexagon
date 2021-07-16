@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 const MatchSchema = new mongoose.Schema({
     matchID: String,
-    apiKey: { type: String, default: "" },
+    apiKey: String,
     demoFile: { type: String, default: null },
-    map: String,
+    map: { type: String, default: null },
     winner: { type: String, default: null },
     forfeit: { type: Number, default: 0 },
     cancelled: { type: Number, default: 0 },
