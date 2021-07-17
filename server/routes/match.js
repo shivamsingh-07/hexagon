@@ -41,7 +41,7 @@ router.get("/:match_id/config", async (req, res) => {
         data.team_1.forEach(player => (team_1[player.steamID] = player.name));
         data.team_2.forEach(player => (team_2[player.steamID] = player.name));
 
-        match.matchid = matchID;
+        match.matchid = `${matchID}`;
         match.players_per_team = Math.floor((data.team_1.length + data.team_2.length) / 2);
         match.maplist = data.map;
         match.team1.name = "Team_" + data.captain_1.name;
