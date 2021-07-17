@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
@@ -29,31 +29,32 @@ function Dashboard({ auth }) {
         if (!steamID) return setMessage("No steam account found!");
         space.emit("searching", { name, steamID, thumbnail, profile });
         setMessage("searching");
-        // document.getElementById("play").hidden = true;
-        // document.getElementById("cancel").hidden = false;
+        document.getElementById("play").hidden = true;
+        document.getElementById("cancel").hidden = false;
     };
 
     const cancel = () => {
         space.emit("cancel", steamID);
         setMessage("");
-        // document.getElementById("play").hidden = false;
+        document.getElementById("play").hidden = false;
+        document.getElementById("cancel").hidden = true;
     };
 
-    const accept = () => {
-        space.emit("accepted", steamID);
-        setMessage("accepted");
-        // document.getElementById("accept").hidden = true;
-    };
+    // const accept = () => {
+    //     space.emit("accepted", steamID);
+    //     setMessage("accepted");
+    //     document.getElementById("accept").hidden = true;
+    // };
 
     space.on("matchFound", room => {
-        setMessage("Join: " + room);
+        history.push("/room/" + room);
     });
 
-    space.on("matchNotAccepted", () => {
-        setMessage("Match was found but some player(s) failed to accept...");
-        // document.getElementById("accept").hidden = true;
-        // document.getElementById("play").hidden = false;
-    });
+    // space.on("matchNotAccepted", () => {
+    //     setMessage("Match was found but some player(s) failed to accept...");
+    //     document.getElementById("accept").hidden = true;
+    //     document.getElementById("play").hidden = false;
+    // });
 
     return (
         <div>
@@ -69,22 +70,27 @@ function Dashboard({ auth }) {
             <span>SteamID: {steamID}</span>
             <br />
             <p>
-                Profile:
+                Profile:&nbsp;
                 <a href={profile} target="_blank">
                     {profile}
                 </a>
             </p>
             <br />
             <br />
-            <button onClick={() => search()}>Play</button>
-            <br />
-            <button onClick={() => cancel()}>Cancel</button>
-            <br />
+            <button id="play" onClick={() => search()} hidden={steamID == null}>
+                Play
+            </button>
+            <br /> <br />
+            <button id="cancel" onClick={() => cancel()} hidden={steamID == null || true}>
+                Cancel
+            </button>
+            <br /> <br />
             <span>{message}</span>
+            <br /> <br />
             <button onClick={() => logout()}>Logout</button>
             <br />
             <br />
-            <a href={`${process.env.REACT_APP_API_URL}/auth/steam`} target="_blank" hidden={steamID !== null}>
+            <a href={`${process.env.REACT_APP_API_URL}/auth/steam`} hidden={steamID !== null}>
                 Connect Steam
             </a>
         </div>

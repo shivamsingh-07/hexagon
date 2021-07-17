@@ -10,7 +10,8 @@ module.exports = roomID =>
             if (!data) reject("Invalid Room ID");
 
             const match = new Match({
-                matchID: data.roomID,
+                matchID: Math.floor(Math.random() * 1000000000),
+                roomID: data.roomID,
                 apiKey: Math.random().toString(20).slice(2).toUpperCase()
             });
 
@@ -23,13 +24,8 @@ module.exports = roomID =>
                     .then(() => rcon.command(`sm_cvar get5_web_api_key "${details.apiKey}"`))
                     .then(() => rcon.command("sm_whitelist_resettodefault"))
                     .then(() => {
-                        data.team_1.forEach(async player => {
-                            await rcon.command(`sm_whitelist_add "STEAM_1:1:${new SteamID(player.steamID).getSteam2RenderedID().split(":")[2]}"`);
-                        });
-
-                        data.team_2.forEach(async player => {
-                            await rcon.command(`sm_whitelist_add "STEAM_1:1:${new SteamID(player.steamID).getSteam2RenderedID().split(":")[2]}"`);
-                        });
+                        data.team_1.forEach(async player => await rcon.command(`sm_whitelist_add "${new SteamID(player.steamID).getSteam2RenderedID(true)}"`));
+                        data.team_2.forEach(async player => await rcon.command(`sm_whitelist_add "${new SteamID(player.steamID).getSteam2RenderedID(true)}"`));
                     })
                     .then(() => rcon.disconnect())
                     .then(() => resolve(data.serverIP))

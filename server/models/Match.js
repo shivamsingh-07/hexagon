@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 
 const MatchSchema = new mongoose.Schema({
-    matchID: String,
+    matchID: Number,
     apiKey: String,
+    roomID: String,
     demoFile: { type: String, default: null },
     map: { type: String, default: null },
     winner: { type: String, default: null },

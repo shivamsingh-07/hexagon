@@ -25,12 +25,15 @@ router.get("/:match_id", (req, res) => {
     });
 });
 
-router.get("/:match_id/config", (req, res) => {
+router.get("/:match_id/config", async (req, res) => {
     const matchID = req.params.match_id == null ? null : req.params.match_id;
+    const matchValues = await Match.findOne({ matchID }, { _id: 0, __v: 0 });
 
-    Room.findOne({ roomID: matchID }, { _id: 0, __v: 0 }, (err, data) => {
+    if (!matchValues) return res.status(404).send({ message: "Match not found!" });
+
+    Room.findOne({ roomID: matchValues.roomID }, { _id: 0, __v: 0 }, (err, data) => {
         if (err) throw err;
-        if (!data) res.status(400).json({ message: "Invalid match ID" });
+        if (!data) res.status(400).json({ message: "Invalid room ID" });
 
         const team_1 = {};
         const team_2 = {};
@@ -38,7 +41,8 @@ router.get("/:match_id/config", (req, res) => {
         data.team_1.forEach(player => (team_1[player.steamID] = player.name));
         data.team_2.forEach(player => (team_2[player.steamID] = player.name));
 
-        match.matchid = data.roomID;
+        match.matchid = matchID;
+        match.players_per_team = Math.floor((data.team_1.length + data.team_2.length) / 2);
         match.maplist = data.map;
         match.team1.name = "Team_" + data.captain_1.name;
         match.team1.players = team_1;
@@ -53,17 +57,15 @@ router.get("/:match_id/config", (req, res) => {
 router.post("/:match_id/map/:map_number/start", async (req, res) => {
     try {
         const matchID = req.params.match_id == null ? null : req.params.match_id;
+        const apiKey = req.body.key == null ? null : req.body.key;
         const mapName = req.body.mapname == null ? null : req.body.mapname;
-        let matchFinalized = true;
-        const matchValues = await Match.findOne({ matchID }, { _id: 0, __v: 0 });
+        const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
-        if (matchValues.endedAt == null && matchValues.cancelled == 0) matchFinalized = false;
-
-        check_api_key(matchValues.apiKey, req.body.key, matchFinalized);
+        if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
         await Match.findOneAndUpdate(
-            { matchID },
+            { matchID, apiKey },
             {
                 map: mapName,
                 startedAt: new Date().toString()
@@ -71,7 +73,7 @@ router.post("/:match_id/map/:map_number/start", async (req, res) => {
         );
         res.status(200).send({ message: "Success" });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         res.status(500).json({ message: err.toString() });
     }
 });
@@ -79,18 +81,16 @@ router.post("/:match_id/map/:map_number/start", async (req, res) => {
 router.post("/:match_id/map/:map_number/update", async (req, res) => {
     try {
         const matchID = req.params.match_id == null ? null : req.params.match_id;
+        const apiKey = req.body.key == null ? null : req.body.key;
         const team1Score = req.body.team1score;
         const team2Score = req.body.team2score;
-        let matchFinalized = true;
-        const matchValues = await Match.findOne({ matchID }, { _id: 0, __v: 0 });
+        const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
-        if (matchValues.endedAt == null && matchValues.cancelled == 0) matchFinalized = false;
-
-        check_api_key(matchValues.apiKey, req.body.key, matchFinalized);
+        if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
         await Match.findOneAndUpdate(
-            { matchID },
+            { matchID, apiKey },
             {
                 team_1_score: team1Score,
                 team_2_score: team2Score
@@ -98,7 +98,7 @@ router.post("/:match_id/map/:map_number/update", async (req, res) => {
         );
         res.status(200).send({ message: "Success" });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         res.status(500).json({ message: err.toString() });
     }
 });
@@ -106,23 +106,21 @@ router.post("/:match_id/map/:map_number/update", async (req, res) => {
 router.post("/:match_id/map/:map_number/finish", async (req, res) => {
     try {
         const matchID = req.params.match_id == null ? null : req.params.match_id;
+        const apiKey = req.body.key == null ? null : req.body.key;
         const winner = req.body.winner == null ? null : req.body.winner;
         const team1Score = req.body.team1score;
         const team2Score = req.body.team2score;
-        let teamIdWinner,
-            matchFinalized = true;
-        const matchValues = await Match.findOne({ matchID }, { _id: 0, __v: 0 });
+        let teamIdWinner;
+        const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
-        if (matchValues.endedAt == null && matchValues.cancelled == 0) matchFinalized = false;
-
-        check_api_key(matchValues.apiKey, req.body.key, matchFinalized);
+        if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
         if (winner == "team1") teamIdWinner = "team_1";
         else if (winner == "team2") teamIdWinner = "team_2";
 
         await Match.findOneAndUpdate(
-            { matchID },
+            { matchID, apiKey },
             {
                 team_1_score: team1Score,
                 team_2_score: team2Score,
@@ -131,7 +129,7 @@ router.post("/:match_id/map/:map_number/finish", async (req, res) => {
         );
         res.status(200).send({ message: "Success" });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         res.status(500).json({ message: err.toString() });
     }
 });
@@ -139,16 +137,15 @@ router.post("/:match_id/map/:map_number/finish", async (req, res) => {
 router.post("/:match_id/finish", async (req, res) => {
     try {
         const matchID = req.params.match_id == null ? null : req.params.match_id;
+        const apiKey = req.body.key == null ? null : req.body.key;
         const winner = req.body.winner == null ? null : req.body.winner;
         const forfeit = req.body.forfeit == null ? 0 : req.body.forfeit;
-        let cancelled = 0,
-            matchFinalized = true;
-        const matchValues = await Match.findOne({ matchID }, { _id: 0, __v: 0 });
+        let cancelled = 0;
+
+        const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
-        if (matchValues.endedAt == null && matchValues.cancelled == 0) matchFinalized = false;
-
-        check_api_key(matchValues.apiKey, req.body.key, matchFinalized);
+        if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
         if (winner === "none") {
             cancelled = 1;
@@ -156,7 +153,7 @@ router.post("/:match_id/finish", async (req, res) => {
         }
 
         await Match.findOneAndUpdate(
-            { matchID },
+            { matchID, apiKey },
             {
                 forfeit: forfeit,
                 cancelled: cancelled,
@@ -171,7 +168,7 @@ router.post("/:match_id/finish", async (req, res) => {
             res.status(200).send({ message: "Success" });
         });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         res.status(500).json({ message: err.toString() });
     }
 });
@@ -179,6 +176,7 @@ router.post("/:match_id/finish", async (req, res) => {
 router.post("/:match_id/map/:map_number/player/:steam_id/update", async (req, res) => {
     try {
         const matchID = req.params.match_id == null ? null : parseInt(req.params.match_id);
+        const apiKey = req.body.key == null ? null : req.body.key;
         const steamId = req.params.steam_id == null ? null : req.params.steam_id;
         const playerTeam = req.body.team == null ? null : req.body.team;
         const playerName = req.body.name == null ? null : req.body.name;
@@ -211,18 +209,16 @@ router.post("/:match_id/map/:map_number/player/:steam_id/update", async (req, re
         const playerContrib = req.body.contribution_score == null ? null : parseInt(req.body.contribution_score);
         const playerMvp = req.body.mvp == null ? null : parseInt(req.body.mvp);
 
-        let matchFinalized = true;
-        const matchValues = await Match.findOne({ matchID }, { _id: 0, __v: 0 });
+        let playerTeamId;
+        const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
-        if (matchValues.endedAt == null && matchValues.cancelled == 0) matchFinalized = false;
-
-        check_api_key(matchValues.apiKey, req.body.key, matchFinalized);
+        if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
         if (playerTeam === "team1") playerTeamId = "team_1";
         else if (playerTeam === "team2") playerTeamId = "team_2";
 
-        await Match.findOne({ matchID }, (err, data) => {
+        Match.findOne({ matchID, apiKey }, (err, data) => {
             if (err) throw err;
 
             data.playerTeamId.set(steamId, {
@@ -256,11 +252,11 @@ router.post("/:match_id/map/:map_number/player/:steam_id/update", async (req, re
                 playerContrib,
                 playerMvp
             });
-            data.save();
-        });
 
-        res.status(200).send({ message: "Success" });
+            data.save().then(() => res.status(200).send({ message: "Success" }));
+        });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: err.toString() });
     }
 });
@@ -268,22 +264,22 @@ router.post("/:match_id/map/:map_number/player/:steam_id/update", async (req, re
 router.post("/:match_id/map/:map_number/demo", async (req, res) => {
     try {
         const matchID = req.params.match_id == null ? null : req.params.match_id;
+        const apiKey = req.body.key == null ? null : req.body.key;
         const demoFile = req.body.demoFile == null ? null : req.body.demoFile;
-        const matchValues = await Match.findOne({ matchID }, { _id: 0, __v: 0 });
+        const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
-        if (matchValues.endedAt == null && matchValues.cancelled == 0) matchFinalized = false;
-
-        check_api_key(matchValues.apiKey, req.body.key, matchFinalized);
+        if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
         await Match.findOneAndUpdate(
-            { matchID },
+            { matchID, apiKey },
             {
                 demoFile
             }
         );
         res.status(200).send({ message: "Success" });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: err.toString() });
     }
 });
@@ -292,17 +288,15 @@ router.put("/:match_id/map/:map_number/demo/upload/:api_key", async (req, res) =
     try {
         const matchID = req.params.match_id == null ? null : req.params.match_id;
         const apiKey = req.params.api_key;
-        const matchValues = await Match.findOne({ matchID }, { _id: 0, __v: 0 });
+        const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
-        if (matchValues.endedAt == null && matchValues.cancelled == 0) matchFinalized = false;
-
-        check_api_key(matchValues.apiKey, apiKey, matchFinalized);
+        if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
         const endTimeMs = new Date(matchValues.endedAt);
         const timeDifference = Math.abs(new Date() - endTimeMs);
         const minuteDifference = Math.floor(timeDifference / 1000 / 60);
-        if (minuteDifference > 8) return res.status(500).json({ message: "Demo can no longer be uploaded." });
+        if (minuteDifference > 10) return res.status(500).json({ message: "Demo can no longer be uploaded." });
 
         zip.file(matchValues.demoFile, req.body, { binary: true });
         zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }).then(buffer =>
@@ -317,7 +311,7 @@ router.put("/:match_id/map/:map_number/demo/upload/:api_key", async (req, res) =
                     if (err) throw err;
 
                     await Match.findOneAndUpdate(
-                        { matchID },
+                        { matchID, apiKey },
                         {
                             demoFile: data.Location
                         }
@@ -328,13 +322,9 @@ router.put("/:match_id/map/:map_number/demo/upload/:api_key", async (req, res) =
             )
         );
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: err.toString() });
     }
 });
-
-const check_api_key = (match_api_key, given_api_key, match_finished) => {
-    if (match_api_key.localeCompare(given_api_key) !== 0) throw "Not a correct API Key.";
-    if (match_finished == true) throw "Match is already finalized.";
-};
 
 module.exports = router;
