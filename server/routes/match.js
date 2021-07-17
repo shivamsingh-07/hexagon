@@ -68,7 +68,7 @@ router.post("/:match_id/map/:map_number/start", async (req, res) => {
             { matchID, apiKey },
             {
                 map: mapName,
-                startedAt: new Date().toString()
+                startedAt: new Date().toUTCString()
             }
         );
         res.status(200).send({ message: "Success" });
@@ -107,24 +107,19 @@ router.post("/:match_id/map/:map_number/finish", async (req, res) => {
     try {
         const matchID = req.params.match_id == null ? null : req.params.match_id;
         const apiKey = req.body.key == null ? null : req.body.key;
-        const winner = req.body.winner == null ? null : req.body.winner;
+        // const winner = req.body.winner == null ? null : req.body.winner;
         const team1Score = req.body.team1score;
         const team2Score = req.body.team2score;
-        let teamIdWinner;
         const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
         if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
-        if (winner == "team1") teamIdWinner = "team_1";
-        else if (winner == "team2") teamIdWinner = "team_2";
-
         await Match.findOneAndUpdate(
             { matchID, apiKey },
             {
                 team_1_score: team1Score,
-                team_2_score: team2Score,
-                winner: teamIdWinner
+                team_2_score: team2Score
             }
         );
         res.status(200).send({ message: "Success" });
@@ -155,13 +150,14 @@ router.post("/:match_id/finish", async (req, res) => {
         await Match.findOneAndUpdate(
             { matchID, apiKey },
             {
-                forfeit: forfeit,
-                cancelled: cancelled,
-                endedAt: new Date().toString()
+                forfeit,
+                cancelled,
+                winner: winner.slice(0, 4) + "_" + winner.slice(4),
+                endedAt: new Date().toUTCString()
             }
         );
 
-        Room.findOne({ roomID: matchID }, async (err, data) => {
+        Room.findOne({ roomID: matchValues.roomID }, async (err, data) => {
             if (err) throw err;
 
             await Server.findOneAndUpdate({ credential: data.serverIP }, { availability: true });
@@ -209,19 +205,15 @@ router.post("/:match_id/map/:map_number/player/:steam_id/update", async (req, re
         const playerContrib = req.body.contribution_score == null ? null : parseInt(req.body.contribution_score);
         const playerMvp = req.body.mvp == null ? null : parseInt(req.body.mvp);
 
-        let playerTeamId;
         const matchValues = await Match.findOne({ matchID, apiKey }, { _id: 0, __v: 0 });
 
         if (!matchValues) return res.status(404).send({ message: "Match not found!" });
         if (matchValues.endedAt != null && matchValues.cancelled != 0) throw "Match is already finalized.";
 
-        if (playerTeam === "team1") playerTeamId = "team_1";
-        else if (playerTeam === "team2") playerTeamId = "team_2";
-
         Match.findOne({ matchID, apiKey }, (err, data) => {
             if (err) throw err;
 
-            data.playerTeamId.set(steamId, {
+            data[playerTeam.slice(0, 4) + "_" + playerTeam.slice(4)].set(steamId, {
                 playerName,
                 playerKills,
                 playerDeaths,
@@ -298,12 +290,12 @@ router.put("/:match_id/map/:map_number/demo/upload/:api_key", async (req, res) =
         const minuteDifference = Math.floor(timeDifference / 1000 / 60);
         if (minuteDifference > 10) return res.status(500).json({ message: "Demo can no longer be uploaded." });
 
-        zip.file(matchValues.demoFile, req.body, { binary: true });
+        zip.file(matchValues.roomID + "-" + matchValues.demoFile.split("-")[1], req.body, { binary: true });
         zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }).then(buffer =>
             s3.upload(
                 {
                     Bucket: process.env.AWS_BUCKET_NAME,
-                    Key: "demos/" + matchID + ".zip",
+                    Key: "demos/" + matchValues.roomID + ".zip",
                     Body: buffer,
                     ACL: "public-read"
                 },
