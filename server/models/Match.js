@@ -14,12 +14,12 @@ const MatchSchema = new mongoose.Schema({
     team_1: {
         type: Map,
         of: Object,
-        default: null
+        default: {}
     },
     team_2: {
         type: Map,
         of: Object,
-        default: null
+        default: {}
     },
     startedAt: { type: String, default: null },
     endedAt: { type: String, default: null }

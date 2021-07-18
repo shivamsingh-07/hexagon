@@ -1,10 +1,10 @@
 const router = require("express").Router();
+const AWS = require("aws-sdk");
 const zip = require("jszip")();
 const Match = require("../models/Match");
 const match = require("../json/match.json");
 const Room = require("../models/Room");
 const Server = require("../models/Server");
-const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
     credentials: {
@@ -14,10 +14,10 @@ const s3 = new AWS.S3({
     }
 });
 
-router.get("/:match_id", (req, res) => {
-    const matchID = req.params.match_id == null ? null : req.params.match_id;
+router.get("/:roomID", (req, res) => {
+    const roomID = req.params.roomID;
 
-    Match.findOne({ matchID }, { _id: 0, __v: 0 }, (err, data) => {
+    Match.findOne({ roomID }, { _id: 0, __v: 0, startedAt: 0, endedAt: 0, matchID: 0, apiKey: 0 }, (err, data) => {
         if (err) throw err;
         if (!data) return res.status(400).json({ message: "Invalid match ID" });
 
