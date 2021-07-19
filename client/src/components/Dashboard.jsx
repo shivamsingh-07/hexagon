@@ -47,6 +47,7 @@ function Dashboard({ auth }) {
     // };
 
     space.on("matchFound", room => {
+        window.alert("Match found!");
         history.push("/room/" + room);
     });
 

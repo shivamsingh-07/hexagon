@@ -10,7 +10,7 @@ function Room({ auth }) {
     const [loading, setLoading] = useState(true);
     const { roomID } = useParams();
     const history = useHistory();
-    let ID, time;
+    let ID;
 
     useEffect(
         () =>
@@ -41,13 +41,37 @@ function Room({ auth }) {
         []
     );
 
+    const timer = epoch => {
+        ID = setInterval(() => {
+            let distance = new Date(epoch).getTime() - new Date().getTime();
+            let minutes =
+                Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)) < 10
+                    ? Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)) < 0
+                        ? "00"
+                        : "0" + Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+                    : Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+            let seconds =
+                Math.floor((distance % (1000 * 60)) / 1000) < 10
+                    ? Math.floor((distance % (1000 * 60)) / 1000) < 0
+                        ? "00"
+                        : "0" + Math.floor((distance % (1000 * 60)) / 1000)
+                    : Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("clock").innerHTML = minutes + ":" + seconds;
+
+            if (distance <= 0) {
+                clearInterval(ID);
+                space.emit("randomMap", roomID);
+            }
+        }, 1000);
+    };
+
     space.on("turn", user => {
         let map = document.querySelectorAll(".btn-close");
         if (user.name === auth.username) {
             document.getElementById("turn").innerText = "Your Turn";
-            for (let i = 0; i < map.length; i++) {
-                map[i].style.visibility = "visible";
-            }
+            for (let i = 0; i < map.length; i++) map[i].style.visibility = "visible";
         } else document.getElementById("turn").innerText = "Your Opponent's Turn";
     });
 
@@ -55,8 +79,9 @@ function Room({ auth }) {
         document.getElementById(ban).remove();
     });
 
-    space.on("incTime", () => {
-        time += 5;
+    space.on("countdown", time => {
+        clearInterval(ID);
+        timer(time);
     });
 
     space.on("mapSelected", selected => {
@@ -66,31 +91,42 @@ function Room({ auth }) {
         document.getElementById("name").innerText = selected.map.slice(3).charAt(0).toUpperCase() + selected.map.slice(4);
         document.getElementById("url").value = "connect " + selected.connect;
         document.getElementById("connect").setAttribute("href", "steam://connect/" + selected.connect);
-        document.getElementById("clock").hidden = true;
+        document.getElementById("clock").hidden = false;
         document.getElementById("turn").hidden = true;
         document.getElementById("loader").remove();
         document.getElementById("veto").remove();
         document.getElementById("final").hidden = false;
+        document.getElementById("status").innerText = "Time To Connect";
+        document.getElementById("status").hidden = false;
+
+        ID = setInterval(() => {
+            let distance = new Date(selected.countdown + 300000).getTime() - new Date().getTime();
+            let minutes =
+                Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)) < 10
+                    ? Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)) < 0
+                        ? "00"
+                        : "0" + Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+                    : Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+            let seconds =
+                Math.floor((distance % (1000 * 60)) / 1000) < 10
+                    ? Math.floor((distance % (1000 * 60)) / 1000) < 0
+                        ? "00"
+                        : "0" + Math.floor((distance % (1000 * 60)) / 1000)
+                    : Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("clock").innerHTML = minutes + ":" + seconds;
+
+            if (distance <= 0) clearInterval(ID);
+        }, 1000);
     });
 
     space.on("loading", () => {
+        document.getElementById("status").hidden = true;
         document.getElementById("clock").hidden = true;
+        document.getElementById("turn").hidden = true;
         document.getElementById("loader").hidden = false;
         document.getElementById("veto").hidden = true;
-    });
-
-    space.on("startVeto", counter => {
-        time = counter;
-        document.getElementById("veto").hidden = false;
-        // ID = setInterval(() => {
-        //     if (time > 9) document.getElementById("clock").innerHTML = "00:" + time--;
-        //     else if (time >= 0) document.getElementById("clock").innerHTML = "00:0" + time--;
-        //     else {
-        //         clearInterval(ID);
-        //         document.getElementById("clock").innerHTML = "";
-        //         space.emit("randomMap", roomID);
-        //     }
-        // }, 1000);
     });
 
     const ban = id => {
@@ -98,6 +134,7 @@ function Room({ auth }) {
         for (let i = 0; i < map.length; i++) {
             map[i].style.visibility = "hidden";
         }
+        space.emit("increment", roomID);
         space.emit("banMap", { room: roomID, map: id });
     };
 
@@ -127,10 +164,14 @@ function Room({ auth }) {
                         ))}
                     </section>
                     <section>
-                        <div id="clock">Waiting For Players...</div>
+                        <span id="status">Veto Time</span>
                         <br />
-                        <div id="turn"></div>
-                        <div id="veto" hidden>
+                        <span id="clock"></span>
+                        <br />
+                        <br />
+                        <span id="turn"></span>
+                        <br />
+                        <div id="veto">
                             {match.map.map((map, index) => {
                                 let name = map.slice(3).charAt(0).toUpperCase() + map.slice(4);
                                 if (map === "de_cbble") name = "Cobblestone";

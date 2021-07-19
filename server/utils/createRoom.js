@@ -19,6 +19,7 @@ module.exports = (array, server) =>
         const room = new Room({
             roomID: nanoid(),
             serverIP: server,
+            timer: new Date(new Date().getTime() + 60000).getTime(),
             captain_1,
             captain_2,
             vetoTurn: [captain_1, captain_2][Math.floor(Math.random() * 2)],

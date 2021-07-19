@@ -43,16 +43,24 @@
     align-items: flex-start;
     margin: 20px auto;
 }
+
 section {
     padding: 20px;
 }
+
 #clock,
-#turn {
-    font-size: 30px;
+#status {
+    font-size: 28px;
 }
+
+#turn {
+    font-size: 24px;
+}
+
 #loader {
     margin: 100px auto;
 }
+
 .maps {
     width: 20vw;
     display: flex;
@@ -62,19 +70,24 @@ section {
     margin: 20px auto;
     padding: 0 5px 0 0;
 }
+
 .maps span {
     margin: 0 auto 0 10px;
 }
+
 .btn-close {
     visibility: hidden;
 }
+
 .maps img {
     width: 50px;
     height: 35px;
 }
+
 section {
     border: 1px solid;
 }
+
 .card {
     border: 0;
 }

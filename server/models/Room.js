@@ -13,6 +13,7 @@ const UserSchema = new mongoose.Schema(
 const RoomSchema = new mongoose.Schema({
     roomID: String,
     serverIP: String,
+    timer: String,
     captain_1: UserSchema,
     captain_2: UserSchema,
     map: {

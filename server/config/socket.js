@@ -17,6 +17,7 @@ module.exports = server => {
     // Handle player matchmaking
     io.of("/matchmaking").on("connection", socket => {
         socket.on("searching", user => {
+            if (queue.includes(user)) return;
             socket.join("lobby");
             queue.push(user);
 
@@ -48,14 +49,22 @@ module.exports = server => {
             Room.findOne({ roomID: data.room }, { __v: 0, _id: 0 }, (err, body) => {
                 if (err) throw err;
 
-                io.of("/room").in(data.room).emit("startVeto", 59);
+                io.of("/room").in(data.room).emit("countdown", parseInt(body.timer));
                 io.of("/room").in(data.room).emit("turn", body.vetoTurn);
             });
         });
 
+        socket.on("increment", room => {
+            Room.findOne({ roomID: room }, (err, body) => {
+                if (err) throw err;
+
+                body.timer = new Date(parseInt(body.timer) + 5000).getTime();
+                body.save().then(res => io.of("/room").in(room).emit("countdown", parseInt(res.timer)));
+            });
+        });
+
         socket.on("banMap", data => {
-            // io.of("/room").in(data.room).emit("incTime");
-            Room.findOneAndUpdate({ roomID: data.room }, { $pull: { map: data.map } }, { new: true, useFindAndModify: false }, (err, body) => {
+            Room.findOneAndUpdate({ roomID: data.room }, { $pull: { map: data.map } }, { new: true }, (err, body) => {
                 if (err) throw err;
 
                 if (body.map.length > 1) {
@@ -70,7 +79,7 @@ module.exports = server => {
                         io
                             .of("/room")
                             .in(data.room)
-                            .emit("mapSelected", { connect: `${ip}`, map: body.map[0] })
+                            .emit("mapSelected", { connect: `${ip}`, map: body.map[0], countdown: parseInt(body.timer) })
                     );
                 }
             });
@@ -78,24 +87,20 @@ module.exports = server => {
 
         socket.on("randomMap", room => {
             io.of("/room").in(room).emit("loading");
-            try {
-                Room.findOne({ roomID: room }, { map: 1 }, (err, body) => {
-                    if (err) throw err;
 
-                    while (body.map.length > 1) body.map.splice(Math.floor(Math.random() * body.map.length), 1);
-                    body.save().then(res =>
-                        // setupMatch(res.roomID).then(ip =>
-                        //     io
-                        //         .of("/room")
-                        //         .in(res.room)
-                        //         .emit("mapSelected", { connect: `connect ${ip}`, map: res.map[0] })
-                        // )
-                        io.of("/room").in(room).emit("mapSelected", { connect: `connect xyz`, map: "de_mirage" })
-                    );
-                });
-            } catch (error) {
-                console.log(error);
-            }
+            Room.findOne({ roomID: room }, (err, body) => {
+                if (err) throw err;
+
+                while (body.map.length > 1) body.map.splice(Math.floor(Math.random() * body.map.length), 1);
+                body.save().then(res =>
+                    setupMatch(body.roomID).then(ip =>
+                        io
+                            .of("/room")
+                            .in(room)
+                            .emit("mapSelected", { connect: `${ip}`, map: res.map[0], countdown: parseInt(body.timer) })
+                    )
+                );
+            });
         });
 
         // Room Chat
