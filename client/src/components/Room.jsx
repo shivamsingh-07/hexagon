@@ -7,6 +7,7 @@ function Room({ auth }) {
     const space = io.connect(`${process.env.REACT_APP_API_URL}/room`);
     const [match, setMatch] = useState({});
     const [message, setMessage] = useState("");
+    const [vetoStatus, setVetoStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const { roomID } = useParams();
     const history = useHistory();
@@ -18,20 +19,6 @@ function Room({ auth }) {
                 try {
                     await axios.get(`${process.env.REACT_APP_API_URL}/room/` + roomID, { withCredentials: true }).then(response => {
                         setMatch(response.data);
-                        setLoading(false);
-
-                        if (response.data.map.length <= 1) return history.push("/dashboard");
-
-                        let team;
-                        if (
-                            response.data.team_1.some((user, index, array) => {
-                                return user.steamID == auth.steamID64;
-                            })
-                        )
-                            team = "Team_" + response.data.captain_1.name;
-                        else team = "Team_" + response.data.captain_2.name;
-
-                        space.emit("joinRoom", { room: roomID, team });
                     });
                 } catch (err) {
                     setMessage(err.response.data.error);
@@ -41,7 +28,38 @@ function Room({ auth }) {
         []
     );
 
-    const timer = epoch => {
+    useEffect(() => {
+        if (typeof match.roomID === "undefined") return;
+        let difference = new Date(parseInt(match.timer) + 300000).getTime() - new Date().getTime();
+        if (difference <= 0) return history.push("/dashboard");
+
+        let team;
+        if (
+            match.team_1.some((user, index, array) => {
+                return user.steamID === auth.steamID64;
+            })
+        )
+            team = "Team_" + match.captain_1.name;
+        else team = "Team_" + match.captain_2.name;
+
+        space.emit("joinRoom", { room: roomID, team });
+
+        setLoading(false);
+        if (match.map.length > 1) setVetoStatus(true);
+        else setVetoStatus(false);
+    }, [match]);
+
+    useEffect(() => {
+        if (typeof vetoStatus === null) return;
+
+        if (vetoStatus) {
+            document.getElementById("loader").hidden = true;
+            document.getElementById("veto").hidden = false;
+            document.getElementById("status").innerText = "Veto Time";
+        }
+    }, [vetoStatus]);
+
+    const vetoStart = epoch => {
         ID = setInterval(() => {
             let distance = new Date(epoch).getTime() - new Date().getTime();
             let minutes =
@@ -62,30 +80,13 @@ function Room({ auth }) {
 
             if (distance <= 0) {
                 clearInterval(ID);
-                space.emit("randomMap", roomID);
+                if (match.map.length > 1) space.emit("randomMap", roomID);
+                else vetoFinish({ map: match.map[0], connect: match.serverIP, countdown: parseInt(match.timer) });
             }
         }, 1000);
     };
 
-    space.on("turn", user => {
-        let map = document.querySelectorAll(".btn-close");
-        if (user.name === auth.username) {
-            document.getElementById("turn").innerText = "Your Turn";
-            for (let i = 0; i < map.length; i++) map[i].style.visibility = "visible";
-        } else document.getElementById("turn").innerText = "Your Opponent's Turn";
-    });
-
-    space.on("mapBanned", ban => {
-        document.getElementById(ban).remove();
-    });
-
-    space.on("countdown", time => {
-        clearInterval(ID);
-        timer(time);
-    });
-
-    space.on("mapSelected", selected => {
-        clearInterval(ID);
+    const vetoFinish = selected => {
         document.getElementById("logo").setAttribute("src", `/assets/images/${selected.map}.jpg`);
         if (selected.map === "de_cbble") selected.map = "de_cobblestone";
         document.getElementById("name").innerText = selected.map.slice(3).charAt(0).toUpperCase() + selected.map.slice(4);
@@ -93,8 +94,8 @@ function Room({ auth }) {
         document.getElementById("connect").setAttribute("href", "steam://connect/" + selected.connect);
         document.getElementById("clock").hidden = false;
         document.getElementById("turn").hidden = true;
-        document.getElementById("loader").remove();
-        document.getElementById("veto").remove();
+        document.getElementById("loader").hidden = true;
+        document.getElementById("veto").hidden = true;
         document.getElementById("final").hidden = false;
         document.getElementById("status").innerText = "Time To Connect";
         document.getElementById("status").hidden = false;
@@ -119,6 +120,28 @@ function Room({ auth }) {
 
             if (distance <= 0) clearInterval(ID);
         }, 1000);
+    };
+
+    space.on("turn", user => {
+        let map = document.querySelectorAll(".btn-close");
+        if (user.name === auth.username && (user.name === match.captain_1.name || user.name === match.captain_2.name)) {
+            document.getElementById("turn").innerText = "Your Turn";
+            for (let i = 0; i < map.length; i++) map[i].style.visibility = "visible";
+        } else document.getElementById("turn").innerText = "Your Opponent's Turn";
+    });
+
+    space.on("mapBanned", ban => {
+        document.getElementById(ban).remove();
+    });
+
+    space.on("countdown", time => {
+        clearInterval(ID);
+        vetoStart(time);
+    });
+
+    space.on("mapSelected", selected => {
+        clearInterval(ID);
+        vetoFinish(selected);
     });
 
     space.on("loading", () => {
@@ -150,28 +173,30 @@ function Room({ auth }) {
             <div className="container text-center">
                 <div className="box">
                     <section>
-                        <h2 className="display-6">{"Team_" + match.captain_1.name}</h2>
+                        <h2 className="display-6">Team_{match.captain_1.name}</h2>
                         <br />
                         <br />
                         {match.team_1.map((player, index) => (
                             <div key={index}>
                                 <img src={player.thumbnail} alt="" width="30px" />
                                 &nbsp;&nbsp;
-                                <a href={player.profile} target="_blank" id="player_2">
+                                <a href={player.profile} target="_blank" rel="noreferrer" id="player_2">
                                     {player.name}
                                 </a>
+                                &nbsp;&nbsp;
+                                <img src="https://img.icons8.com/color/24/000000/crown.png" alt="" hidden={index > 0} />
                             </div>
                         ))}
                     </section>
                     <section>
-                        <span id="status">Veto Time</span>
+                        <span id="status"></span>
                         <br />
                         <span id="clock"></span>
                         <br />
                         <br />
                         <span id="turn"></span>
                         <br />
-                        <div id="veto">
+                        <div id="veto" hidden>
                             {match.map.map((map, index) => {
                                 let name = map.slice(3).charAt(0).toUpperCase() + map.slice(4);
                                 if (map === "de_cbble") name = "Cobblestone";
@@ -185,11 +210,11 @@ function Room({ auth }) {
                             })}
                         </div>
 
-                        <div className="spinner-border" id="loader" role="status" hidden></div>
+                        <div className="spinner-border" id="loader" role="status"></div>
 
                         <div id="final" hidden>
                             <div className="card" style={{ width: "18rem" }}>
-                                <img className="card-img-top" id="logo" />
+                                <img className="card-img-top" alt="" id="logo" />
                                 <div className="card-body">
                                     <h5 className="card-title" id="name"></h5>
                                     <br />
@@ -210,7 +235,7 @@ function Room({ auth }) {
                                         </button>
                                     </div>
                                     <br />
-                                    <a href="" id="connect" className="btn btn-primary">
+                                    <a type="button" id="connect" className="btn btn-primary">
                                         CONNECT TO SERVER
                                     </a>
                                 </div>
@@ -218,16 +243,18 @@ function Room({ auth }) {
                         </div>
                     </section>
                     <section>
-                        <h2 className="display-6">{"Team_" + match.captain_2.name}</h2>
+                        <h2 className="display-6">Team_{match.captain_2.name}</h2>
                         <br />
                         <br />
                         {match.team_2.map((player, index) => (
                             <div key={index}>
                                 <img src={player.thumbnail} alt="" width="30px" />
                                 &nbsp;&nbsp;
-                                <a href={player.profile} target="_blank" id="player_2">
+                                <a href={player.profile} target="_blank" rel="noreferrer" id="player_2">
                                     {player.name}
                                 </a>
+                                &nbsp;&nbsp;
+                                <img src="https://img.icons8.com/color/24/000000/crown.png" alt="" hidden={index > 0} />
                             </div>
                         ))}
                     </section>

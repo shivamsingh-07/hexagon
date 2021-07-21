@@ -9,6 +9,7 @@ const helmet = require("helmet");
 const RateLimit = require("express-rate-limit");
 const SessionStore = require("connect-mongo");
 const RateStore = require("rate-limit-mongo");
+const morgan = require("morgan");
 
 require("./config/database");
 require("./config/passport");
@@ -30,6 +31,7 @@ app.use(
     })
 );
 app.use(helmet());
+app.use(morgan("dev"));
 app.use(cors({ origin: process.env.WEB_URL, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
@@ -53,10 +55,6 @@ app.use(
 app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use((req, res, next) => {
-    console.log(req.method, req.url);
-    next();
-});
 
 // Routes
 app.get("/", (req, res) => {

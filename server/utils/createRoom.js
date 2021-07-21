@@ -8,12 +8,12 @@ module.exports = (array, server) =>
         const half = Math.ceil(array.length / 2);
 
         // Create Teams
-        const team_1 = array.slice(0, half);
-        const team_2 = array.slice(-half);
+        const team_1 = array.slice(0, half).sort(() => Math.random() - 0.5);
+        const team_2 = array.slice(-half).sort(() => Math.random() - 0.5);
 
         // Select captain
-        const captain_1 = team_1[Math.floor(Math.random() * team_1.length)];
-        const captain_2 = team_2[Math.floor(Math.random() * team_2.length)];
+        const captain_1 = team_1[0];
+        const captain_2 = team_2[0];
 
         // Create room
         const room = new Room({

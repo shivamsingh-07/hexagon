@@ -5,12 +5,12 @@ import axios from "axios";
 
 function Dashboard({ auth }) {
     const space = io.connect(`${process.env.REACT_APP_API_URL}/matchmaking`);
-    const [name, setName] = useState(auth.username);
-    const [email, setEmail] = useState(auth.email);
-    const [verified, setVerified] = useState(auth.verified);
-    const [steamID, setSteamID] = useState(auth.steamID64);
-    const [thumbnail, setThumbnail] = useState(auth.thumbnail);
-    const [profile, setProfile] = useState(auth.profileUrl);
+    const [name] = useState(auth.username);
+    const [email] = useState(auth.email);
+    const [verified] = useState(auth.verified);
+    const [steamID] = useState(auth.steamID64);
+    const [thumbnail] = useState(auth.thumbnail);
+    const [profile] = useState(auth.profileUrl);
     const [message, setMessage] = useState("");
     const history = useHistory();
 
@@ -72,7 +72,7 @@ function Dashboard({ auth }) {
             <br />
             <p>
                 Profile:&nbsp;
-                <a href={profile} target="_blank">
+                <a href={profile} target="_blank" rel="noreferrer">
                     {profile}
                 </a>
             </p>

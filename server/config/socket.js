@@ -50,7 +50,7 @@ module.exports = server => {
                 if (err) throw err;
 
                 io.of("/room").in(data.room).emit("countdown", parseInt(body.timer));
-                io.of("/room").in(data.room).emit("turn", body.vetoTurn);
+                if (body.map.length > 1) io.of("/room").in(data.room).emit("turn", body.vetoTurn);
             });
         });
 
@@ -75,11 +75,15 @@ module.exports = server => {
                     body.save().then(() => io.of("/room").in(data.room).emit("turn", body.vetoTurn));
                 } else {
                     io.of("/room").in(data.room).emit("loading");
-                    setupMatch(body.roomID).then(ip =>
-                        io
-                            .of("/room")
-                            .in(data.room)
-                            .emit("mapSelected", { connect: `${ip}`, map: body.map[0], countdown: parseInt(body.timer) })
+                    body.timer = new Date().getTime();
+
+                    body.save().then(res =>
+                        setupMatch(body.roomID).then(ip =>
+                            io
+                                .of("/room")
+                                .in(data.room)
+                                .emit("mapSelected", { connect: ip, map: res.map[0], countdown: parseInt(body.timer) })
+                        )
                     );
                 }
             });
@@ -92,12 +96,14 @@ module.exports = server => {
                 if (err) throw err;
 
                 while (body.map.length > 1) body.map.splice(Math.floor(Math.random() * body.map.length), 1);
+                body.timer = new Date().getTime();
+
                 body.save().then(res =>
                     setupMatch(body.roomID).then(ip =>
                         io
                             .of("/room")
                             .in(room)
-                            .emit("mapSelected", { connect: `${ip}`, map: res.map[0], countdown: parseInt(body.timer) })
+                            .emit("mapSelected", { connect: ip, map: res.map[0], countdown: parseInt(body.timer) })
                     )
                 );
             });
